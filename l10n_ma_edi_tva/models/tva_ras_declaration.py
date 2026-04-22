@@ -16,6 +16,7 @@ TRIMESTRE_SELECTION = [
     ('3', 'T3 (Jul-Sep)'),
     ('4', 'T4 (Oct-Déc)'),
 ]
+QUARTER_TO_MONTH_MAPPING = {'1': '3', '2': '6', '3': '9', '4': '12'}
 REGIME_SELECTION = [('1', 'Débit'), ('2', 'Encaissement')]
 REF_NAT_OPT_SELECTION = [
     ('1', 'Services'),
@@ -215,8 +216,7 @@ class TvaRasDeclaration(models.Model):
         )[:8]
         etree.SubElement(root, 'annee').text = self.annee
         if self.periodicite == 'quarterly':
-            quarter_to_month = {'1': '3', '2': '6', '3': '9', '4': '12'}
-            periode_xml = quarter_to_month.get(self.periode, self.periode)
+            periode_xml = QUARTER_TO_MONTH_MAPPING.get(self.periode, self.periode)
         else:
             periode_xml = self.periode
         etree.SubElement(root, 'periode').text = periode_xml

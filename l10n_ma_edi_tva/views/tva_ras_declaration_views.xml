@@ -54,8 +54,7 @@
                             <field name="annee"/>
                             <field name="regime"/>
                             <field name="periodicite"/>
-                            <field name="periode" string="Mois" invisible="periodicite != 'monthly'"/>
-                            <field name="periode" string="Trimestre" invisible="periodicite != 'quarterly'"/>
+                            <field name="periode"/>
                         </group>
                         <group>
                             <field name="line_count" string="Nombre de lignes"/>
