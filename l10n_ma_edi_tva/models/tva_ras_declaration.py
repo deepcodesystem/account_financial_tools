@@ -3,107 +3,193 @@ import io
 import zipfile
 from datetime import date
 
+from lxml import etree
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 
 PERIODE_SELECTION = [(str(i), str(i)) for i in range(1, 13)]
 REGIME_SELECTION = [('1', 'Débit'), ('2', 'Encaissement')]
-REF_NAT_OPT_SELECTION = [('1', 'Type 1'), ('2', 'Type 2'), ('3', 'Type 3')]
+REF_NAT_OPT_SELECTION = [
+    ('1', 'Services'),
+    ('2', 'Travaux'),
+    ('3', 'Fournitures'),
+]
 
 
 class TvaRasDeclaration(models.Model):
     _name = 'tva.ras.declaration'
     _description = 'Déclaration TVA RAS'
+    _rec_name = 'name'
+    _order = 'annee desc, periode desc'
 
     name = fields.Char(string='Référence', required=True, default='New')
-    company_id = fields.Many2one('res.company', string='Société', required=True, default=lambda self: self.env.company)
-    annee = fields.Char(string='Année', required=True, size=4, default=lambda self: str(fields.Date.today().year))
+    company_id = fields.Many2one(
+        'res.company', string='Société', required=True,
+        default=lambda self: self.env.company,
+    )
+    annee = fields.Char(
+        string='Année', required=True, size=4,
+        default=lambda self: str(fields.Date.today().year),
+    )
     periode = fields.Selection(PERIODE_SELECTION, string='Période (Mois)', required=True)
     regime = fields.Selection(REGIME_SELECTION, string='Régime TVA', required=True, default='1')
     state = fields.Selection(
         [('draft', 'Brouillon'), ('validated', 'Validé'), ('exported', 'Exporté')],
-        string='État',
-        default='draft',
-        required=True,
+        string='État', default='draft', required=True,
     )
     line_ids = fields.One2many('tva.ras.declaration.line', 'declaration_id', string='Lignes')
+    line_count = fields.Integer(compute='_compute_line_count', string='Nb Lignes')
+
+    @api.depends('line_ids')
+    def _compute_line_count(self):
+        for rec in self:
+            rec.line_count = len(rec.line_ids)
 
     @api.constrains('annee')
     def _check_annee(self):
         for rec in self:
             if rec.annee and (len(rec.annee) != 4 or not rec.annee.isdigit()):
-                raise ValidationError(_('L\'année doit contenir exactement 4 chiffres.'))
+                raise ValidationError(_("L'année doit contenir exactement 4 chiffres."))
+
+    def _get_period_dates(self):
+        self.ensure_one()
+        try:
+            month = int(self.periode)
+            year = int(self.annee)
+            start_date = date(year, month, 1)
+            end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+        except (TypeError, ValueError):
+            raise UserError(_("Année ou période invalide.")) from None
+        return start_date, end_date
+
+    def _get_payment_date(self, move):
+        """Retourne la date de paiement réelle depuis les écritures réconciliées."""
+        payable_lines = move.line_ids.filtered(
+            lambda l: l.account_id.account_type == 'liability_payable' and l.reconciled
+        )
+        for line in payable_lines:
+            for match in line.matched_credit_ids:
+                if match.credit_move_id.move_id != move:
+                    return match.credit_move_id.date
+            for match in line.matched_debit_ids:
+                if match.debit_move_id.move_id != move:
+                    return match.debit_move_id.date
+        return move.invoice_date
+
+    def _build_lines_vals(self, move):
+        """Construit les valeurs des lignes de déclaration pour une facture.
+        Génère une ligne par taux de TVA distinct (conformément au XSD).
+        """
+        payment_date = self._get_payment_date(move)
+        ifu = (move.partner_id.l10n_ma_ifu or '')[:8]
+        num_facture = (move.ref or move.name or '')[:50]
+        ref_nat = move.l10n_ma_ref_nat_opt or '2'
+        taux_retenu = move.l10n_ma_taux_retenu_source or '75'
+
+        # Grouper les lignes de facture par taux de TVA
+        rate_groups = {}
+        for inv_line in move.invoice_line_ids.filtered(lambda l: not l.display_type):
+            taxes = inv_line.tax_ids.filtered(
+                lambda t: t.amount_type == 'percent' and t.amount > 0
+            )
+            if taxes:
+                rate = str(int(round(taxes[0].amount)))
+            else:
+                rate = '20'
+            rate_groups[rate] = rate_groups.get(rate, 0.0) + inv_line.price_subtotal
+
+        if not rate_groups:
+            rate_groups['20'] = move.amount_untaxed
+
+        vals_list = []
+        for taux, montant in rate_groups.items():
+            vals_list.append({
+                'move_id': move.id,
+                'ifu_fournisseur': ifu,
+                'num_facture': num_facture,
+                'date_paiement': payment_date,
+                'date_operation': move.invoice_date,
+                'ref_nat_opt': ref_nat,
+                'montant_ht': round(montant, 2),
+                'taux_tva': taux,
+                'taux_retenu_source': taux_retenu,
+            })
+        return vals_list
 
     def action_generate_lines(self):
         for rec in self:
             if not rec.periode or not rec.annee:
-                raise UserError(_('Veuillez renseigner la période et l\'année.'))
-            try:
-                month = int(rec.periode)
-                year = int(rec.annee)
-                start_date = date(year, month, 1)
-                if month == 12:
-                    end_date = date(year + 1, 1, 1)
-                else:
-                    end_date = date(year, month + 1, 1)
-            except (TypeError, ValueError):
-                raise UserError(_('Année ou période invalide.')) from None
+                raise UserError(_("Veuillez renseigner la période et l'année."))
 
-            moves = self.env['account.move'].search([
+            start_date, end_date = rec._get_period_dates()
+
+            # Régime Débit : filtrage par date de facture
+            # Régime Encaissement : filtrage par date de paiement (approximé via invoice_date ici)
+            domain = [
                 ('company_id', '=', rec.company_id.id),
                 ('move_type', '=', 'in_invoice'),
                 ('state', '=', 'posted'),
+                ('payment_state', 'in', ['paid', 'in_payment']),
                 ('invoice_date', '>=', start_date),
                 ('invoice_date', '<', end_date),
-            ])
+            ]
+            moves = self.env['account.move'].search(domain, order='invoice_date asc')
 
-            lines_vals = []
+            lines_vals = [(5, 0, 0)]
             for move in moves:
-                lines_vals.append((0, 0, {
-                    'move_id': move.id,
-                    'ifu_fournisseur': (move.partner_id.l10n_ma_ifu or '')[:8],
-                    'num_facture': (move.ref or move.name or '')[:50],
-                    'date_paiement': move.invoice_date,
-                    'date_operation': move.invoice_date,
-                    'ref_nat_opt': move.l10n_ma_ref_nat_opt or '2',
-                    'montant_ht': move.amount_untaxed,
-                    'taux_tva': rec._get_taux_tva(move),
-                    'taux_retenu_source': move.l10n_ma_taux_retenu_source or '75',
-                }))
-            rec.line_ids = [(5, 0, 0)] + lines_vals
-        return True
+                for vals in rec._build_lines_vals(move):
+                    lines_vals.append((0, 0, vals))
 
-    def _get_taux_tva(self, move):
-        taxes = move.invoice_line_ids.mapped('tax_ids').filtered(lambda t: t.amount_type == 'percent')
-        if not taxes:
-            return ''
-        rates = []
-        for tax in taxes:
-            amount = tax.amount
-            if amount is None or not isinstance(amount, (int, float)):
-                continue
-            if abs(amount - round(amount)) < 1e-9:
-                rates.append(str(int(round(amount))))
-            else:
-                rates.append(str(amount))
-        return ','.join(sorted(set(rates)))
+            rec.line_ids = lines_vals
+        return True
 
     def action_validate(self):
         for rec in self:
             if not rec.company_id.l10n_ma_identifiant_fiscal:
-                raise UserError(_('L\'identifiant fiscal de la société est obligatoire.'))
+                raise UserError(_("L'identifiant fiscal de la société est obligatoire."))
+            if not rec.line_ids:
+                raise UserError(_("La déclaration ne contient aucune ligne."))
             rec.state = 'validated'
         return True
 
+    def action_reset_draft(self):
+        for rec in self:
+            rec.state = 'draft'
+        return True
+
     def _generate_xml_content(self):
+        """Génère le contenu XML via lxml (conforme XSD Annexe3)."""
         self.ensure_one()
-        xml_bytes = self.env['ir.qweb']._render('l10n_ma_edi_tva.report_tva_ras_xml', {'docs': self})
-        if isinstance(xml_bytes, str):
-            xml_bytes = xml_bytes.encode('utf-8')
-        if not xml_bytes.lstrip().startswith(b'<?xml'):
-            xml_bytes = b'<?xml version="1.0" encoding="UTF-8"?>\n' + xml_bytes
-        return xml_bytes
+        if not self.company_id.l10n_ma_identifiant_fiscal:
+            raise UserError(_("L'identifiant fiscal de la société est obligatoire."))
+
+        root = etree.Element('VersementRetenueSources')
+        etree.SubElement(root, 'identifiantFiscal').text = (
+            self.company_id.l10n_ma_identifiant_fiscal or ''
+        )[:8]
+        etree.SubElement(root, 'annee').text = self.annee
+        etree.SubElement(root, 'periode').text = self.periode
+        etree.SubElement(root, 'regime').text = self.regime
+
+        fournisseurs = etree.SubElement(root, 'fournisseurs')
+        for line in self.line_ids:
+            f = etree.SubElement(fournisseurs, 'fournisseur')
+            etree.SubElement(f, 'ifuFournisseur').text = (line.ifu_fournisseur or '')[:8]
+            etree.SubElement(f, 'numFacture').text = (line.num_facture or '')[:50]
+            etree.SubElement(f, 'datePaiement').text = (
+                str(line.date_paiement) if line.date_paiement else ''
+            )
+            etree.SubElement(f, 'dateOperation').text = (
+                str(line.date_operation) if line.date_operation else ''
+            )
+            etree.SubElement(f, 'refNatOpt').text = line.ref_nat_opt or '2'
+            etree.SubElement(f, 'montantHT').text = str(round(line.montant_ht, 2))
+            etree.SubElement(f, 'tauxTva').text = line.taux_tva or '20'
+            etree.SubElement(f, 'tauxRetenuSource').text = line.taux_retenu_source or '75'
+
+        return etree.tostring(root, xml_declaration=True, encoding='UTF-8', pretty_print=True)
 
     def _get_export_filename_base(self):
         self.ensure_one()
@@ -111,20 +197,23 @@ class TvaRasDeclaration(models.Model):
             year = int(self.annee)
             month = int(self.periode)
         except (TypeError, ValueError):
-            raise UserError(_('Année ou période invalide pour l’export.')) from None
-        return f"TVA_RAS_{self.company_id.id}_{year}_{month}"
+            raise UserError(_("Année ou période invalide pour l'export.")) from None
+        return f"TVA_RAS_{self.company_id.id}_{year}_{month:02d}"
+
+    def _create_attachment(self, filename, content, mimetype):
+        return self.env['ir.attachment'].create({
+            'name': filename,
+            'datas': base64.b64encode(content),
+            'res_model': self._name,
+            'res_id': self.id,
+            'mimetype': mimetype,
+        })
 
     def action_export_xml(self):
         self.ensure_one()
         xml_content = self._generate_xml_content()
         filename = f"{self._get_export_filename_base()}.xml"
-        attachment = self.env['ir.attachment'].create({
-            'name': filename,
-            'datas': base64.b64encode(xml_content),
-            'res_model': self._name,
-            'res_id': self.id,
-            'mimetype': 'application/xml',
-        })
+        attachment = self._create_attachment(filename, xml_content, 'application/xml')
         self.state = 'exported'
         return {
             'type': 'ir.actions.act_url',
@@ -136,20 +225,12 @@ class TvaRasDeclaration(models.Model):
         self.ensure_one()
         xml_content = self._generate_xml_content()
         base_name = self._get_export_filename_base()
-        xml_filename = f"{base_name}.xml"
-        zip_filename = f"{base_name}.zip"
-
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr(xml_filename, xml_content)
-
-        attachment = self.env['ir.attachment'].create({
-            'name': zip_filename,
-            'datas': base64.b64encode(buffer.getvalue()),
-            'res_model': self._name,
-            'res_id': self.id,
-            'mimetype': 'application/zip',
-        })
+            zf.writestr(f"{base_name}.xml", xml_content)
+        attachment = self._create_attachment(
+            f"{base_name}.zip", buffer.getvalue(), 'application/zip'
+        )
         self.state = 'exported'
         return {
             'type': 'ir.actions.act_url',
@@ -161,14 +242,37 @@ class TvaRasDeclaration(models.Model):
 class TvaRasDeclarationLine(models.Model):
     _name = 'tva.ras.declaration.line'
     _description = 'Ligne Déclaration TVA RAS'
+    _order = 'date_paiement asc, num_facture asc'
 
-    declaration_id = fields.Many2one('tva.ras.declaration', string='Déclaration', required=True, ondelete='cascade')
+    declaration_id = fields.Many2one(
+        'tva.ras.declaration', string='Déclaration',
+        required=True, ondelete='cascade',
+    )
     move_id = fields.Many2one('account.move', string='Facture')
     ifu_fournisseur = fields.Char(string='IFU Fournisseur', size=8)
     num_facture = fields.Char(string='Numéro Facture', size=50)
     date_paiement = fields.Date(string='Date Paiement')
     date_operation = fields.Date(string='Date Opération')
     ref_nat_opt = fields.Selection(REF_NAT_OPT_SELECTION, string='Nature Opération', default='2')
-    montant_ht = fields.Float(string='Montant HT')
-    taux_tva = fields.Char(string='Taux TVA')
-    taux_retenu_source = fields.Char(string='Taux Retenue Source', default='75')
+    montant_ht = fields.Float(string='Montant HT', digits=(16, 2))
+    taux_tva = fields.Char(string='Taux TVA (%)', default='20')
+    taux_retenu_source = fields.Char(string='Taux Retenue Source (%)', default='75')
+    montant_tva = fields.Float(
+        string='Montant TVA', digits=(16, 2),
+        compute='_compute_montants', store=True,
+    )
+    montant_retenu = fields.Float(
+        string='Montant Retenu', digits=(16, 2),
+        compute='_compute_montants', store=True,
+    )
+
+    @api.depends('montant_ht', 'taux_tva', 'taux_retenu_source')
+    def _compute_montants(self):
+        for line in self:
+            try:
+                taux_tva = float(line.taux_tva or 0)
+                taux_retenu = float(line.taux_retenu_source or 0)
+            except (ValueError, TypeError):
+                taux_tva = taux_retenu = 0.0
+            line.montant_tva = round(line.montant_ht * taux_tva / 100, 2)
+            line.montant_retenu = round(line.montant_tva * taux_retenu / 100, 2)

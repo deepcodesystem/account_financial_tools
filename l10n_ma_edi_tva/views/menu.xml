@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_l10n_ma_tva_ras_root" name="Déclarations fiscales" parent="account.menu_finance" sequence="120"/>
+    <menuitem id="menu_l10n_ma_tva_ras_root" name="Télédéclarations EDI" parent="account.menu_finance" sequence="120"/>
     <menuitem
         id="menu_l10n_ma_tva_ras_declarations"
         name="Déclarations TVA RAS Maroc"

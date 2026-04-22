@@ -1,23 +1,31 @@
 from odoo import _, fields, models
+from odoo.exceptions import UserError
 
 
 class TvaRasWizard(models.TransientModel):
     _name = 'tva.ras.wizard'
     _description = 'Assistant Déclaration TVA RAS'
 
-    annee = fields.Char(string='Année', required=True, default=lambda self: str(fields.Date.today().year))
+    annee = fields.Char(
+        string='Année', required=True, size=4,
+        default=lambda self: str(fields.Date.today().year),
+    )
     periode = fields.Selection(
         [(str(i), str(i)) for i in range(1, 13)],
-        string='Période (Mois)',
-        required=True,
+        string='Période (Mois)', required=True,
         default=lambda self: str(fields.Date.today().month),
     )
-    company_id = fields.Many2one('res.company', string='Société', required=True, default=lambda self: self.env.company)
+    company_id = fields.Many2one(
+        'res.company', string='Société', required=True,
+        default=lambda self: self.env.company,
+    )
 
     def action_create_declaration(self):
         self.ensure_one()
+        if not self.annee or len(self.annee) != 4 or not self.annee.isdigit():
+            raise UserError(_("L'année doit contenir exactement 4 chiffres."))
         declaration = self.env['tva.ras.declaration'].create({
-            'name': _('Déclaration TVA RAS {periode}/{annee}').format(periode=self.periode, annee=self.annee),
+            'name': _('TVA RAS %(periode)s/%(annee)s', periode=self.periode, annee=self.annee),
             'company_id': self.company_id.id,
             'annee': self.annee,
             'periode': self.periode,
