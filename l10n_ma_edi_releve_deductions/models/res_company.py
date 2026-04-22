@@ -1,0 +1,18 @@
+from odoo import fields, models
+
+
+class ResCompany(models.Model):
+    _inherit = 'res.company'
+
+    l10n_ma_rd_identifiant_fiscal = fields.Char(string='Identifiant Fiscal (IF)', size=8)
+    l10n_ma_rd_ice = fields.Char(string='ICE Société', size=15)
+    l10n_ma_rd_regime_tva = fields.Selection(
+        [('1', 'Débit'), ('2', 'Encaissement')],
+        string='Régime TVA',
+        default='1',
+    )
+    l10n_ma_rd_periodicite = fields.Selection(
+        [('monthly', 'Mensuelle'), ('quarterly', 'Trimestrielle')],
+        string='Périodicité',
+        default='monthly',
+    )

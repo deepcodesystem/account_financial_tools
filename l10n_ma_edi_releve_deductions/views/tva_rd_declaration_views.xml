@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tva_rd_declaration_tree" model="ir.ui.view">
+        <field name="name">tva.rd.declaration.list</field>
+        <field name="model">tva.rd.declaration</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="annee"/>
+                <field name="periodicite"/>
+                <field name="periode"/>
+                <field name="regime"/>
+                <field name="line_count" string="Lignes"/>
+                <field name="state" widget="badge"
+                    decoration-success="state == 'exported'"
+                    decoration-info="state == 'validated'"
+                    decoration-muted="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tva_rd_declaration_form" model="ir.ui.view">
+        <field name="name">tva.rd.declaration.form</field>
+        <field name="model">tva.rd.declaration</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_generate_lines" type="object"
+                        string="Générer les lignes" class="btn-primary"
+                        invisible="state != 'draft'"/>
+                    <button name="action_validate" type="object"
+                        string="Valider"
+                        invisible="state != 'draft'"/>
+                    <button name="action_export_xml" type="object"
+                        string="Exporter XML"
+                        invisible="state not in ('validated', 'exported')"/>
+                    <button name="action_export_zip" type="object"
+                        string="Exporter ZIP"
+                        invisible="state not in ('validated', 'exported')"/>
+                    <button name="action_reset_draft" type="object"
+                        string="Remettre en brouillon"
+                        invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,validated,exported"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Référence..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="annee"/>
+                            <field name="periodicite"/>
+                            <field name="periode" string="Mois" invisible="periodicite != 'monthly'"/>
+                            <field name="periode" string="Trimestre" invisible="periodicite != 'quarterly'"/>
+                            <field name="regime"/>
+                        </group>
+                        <group>
+                            <field name="line_count" string="Nombre de lignes"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lignes">
+                            <field name="line_ids" nolabel="1" readonly="state == 'exported'">
+                                <list editable="bottom">
+                                    <field name="ord"/>
+                                    <field name="num_facture"/>
+                                    <field name="description"/>
+                                    <field name="nom_fournisseur"/>
+                                    <field name="if_fournisseur"/>
+                                    <field name="date_facture"/>
+                                    <field name="date_paiement"/>
+                                    <field name="montant_ht"/>
+                                    <field name="taux_tva"/>
+                                    <field name="montant_tva"/>
+                                    <field name="montant_ttc"/>
+                                    <field name="prorata"/>
+                                    <field name="mode_paiement"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tva_rd_declaration" model="ir.actions.act_window">
+        <field name="name">Relevés de Déductions TVA (RD)</field>
+        <field name="res_model">tva.rd.declaration</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_tva_rd_wizard_form" model="ir.ui.view">
+        <field name="name">tva.rd.wizard.form</field>
+        <field name="model">tva.rd.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Nouvelle Déclaration RD TVA">
+                <group>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                    <field name="annee"/>
+                    <field name="periodicite"/>
+                    <field name="periode_mensuelle" invisible="periodicite != 'monthly'"/>
+                    <field name="periode_trimestrielle" invisible="periodicite != 'quarterly'"/>
+                </group>
+                <footer>
+                    <button name="action_create_declaration" type="object"
+                        string="Créer et générer" class="btn-primary"/>
+                    <button string="Annuler" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tva_rd_wizard" model="ir.actions.act_window">
+        <field name="name">Nouvelle Déclaration RD TVA</field>
+        <field name="res_model">tva.rd.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
