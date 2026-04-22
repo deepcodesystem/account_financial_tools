@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tva_ras_declaration_tree" model="ir.ui.view">
+        <field name="name">tva.ras.declaration.list</field>
+        <field name="model">tva.ras.declaration</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="annee"/>
+                <field name="periodicite"/>
+                <field name="periode"/>
+                <field name="regime"/>
+                <field name="line_count" string="Lignes"/>
+                <field name="state" widget="badge"
+                    decoration-success="state == 'exported'"
+                    decoration-info="state == 'validated'"
+                    decoration-muted="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tva_ras_declaration_form" model="ir.ui.view">
+        <field name="name">tva.ras.declaration.form</field>
+        <field name="model">tva.ras.declaration</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_generate_lines" type="object"
+                        string="Générer les lignes" class="btn-primary"
+                        invisible="state not in ('draft', 'validated')"/>
+                    <button name="action_validate" type="object"
+                        string="Valider"
+                        invisible="state != 'draft'"/>
+                    <button name="action_export_xml" type="object"
+                        string="Exporter XML"
+                        invisible="state not in ('validated', 'exported')"/>
+                    <button name="action_export_zip" type="object"
+                        string="Exporter ZIP"
+                        invisible="state not in ('validated', 'exported')"/>
+                    <button name="action_reset_draft" type="object"
+                        string="Remettre en brouillon"
+                        invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"
+                        statusbar_visible="draft,validated,exported"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Référence..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="annee"/>
+                            <field name="regime"/>
+                            <field name="periodicite"/>
+                            <field name="periode"/>
+                        </group>
+                        <group>
+                            <field name="line_count" string="Nombre de lignes"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lignes fournisseurs">
+                            <field name="line_ids" nolabel="1"
+                                readonly="state == 'exported'">
+                                <list editable="bottom">
+                                    <field name="move_id"/>
+                                    <field name="ifu_fournisseur"/>
+                                    <field name="num_facture"/>
+                                    <field name="date_paiement"/>
+                                    <field name="date_operation"/>
+                                    <field name="ref_nat_opt"/>
+                                    <field name="montant_ht"/>
+                                    <field name="taux_tva"/>
+                                    <field name="taux_retenu_source"/>
+                                    <field name="montant_tva" optional="show"/>
+                                    <field name="montant_retenu" optional="show"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <group>
+                                            <field name="move_id"/>
+                                            <field name="ifu_fournisseur"/>
+                                            <field name="num_facture"/>
+                                            <field name="ref_nat_opt"/>
+                                        </group>
+                                        <group>
+                                            <field name="date_paiement"/>
+                                            <field name="date_operation"/>
+                                            <field name="montant_ht"/>
+                                            <field name="taux_tva"/>
+                                            <field name="taux_retenu_source"/>
+                                            <field name="montant_tva"/>
+                                            <field name="montant_retenu"/>
+                                        </group>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tva_ras_declaration" model="ir.actions.act_window">
+        <field name="name">Déclarations TVA RAS Maroc</field>
+        <field name="res_model">tva.ras.declaration</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Wizard -->
+    <record id="view_tva_ras_wizard_form" model="ir.ui.view">
+        <field name="name">tva.ras.wizard.form</field>
+        <field name="model">tva.ras.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Nouvelle Déclaration TVA RAS">
+                <group>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                    <field name="annee"/>
+                    <field name="periodicite"/>
+                    <field name="periode_mensuelle" invisible="periodicite != 'monthly'"/>
+                    <field name="periode_trimestrielle" invisible="periodicite != 'quarterly'"/>
+                </group>
+                <footer>
+                    <button name="action_create_declaration" type="object"
+                        string="Créer et générer" class="btn-primary"/>
+                    <button string="Annuler" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tva_ras_wizard" model="ir.actions.act_window">
+        <field name="name">Nouvelle Déclaration TVA RAS</field>
+        <field name="res_model">tva.ras.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

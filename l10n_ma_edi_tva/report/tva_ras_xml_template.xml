@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template de secours QWeb - la génération principale utilise lxml (_generate_xml_content) -->
+    <template id="report_tva_ras_xml" name="TVA RAS XML">
+        <t t-foreach="docs" t-as="o">
+<VersementRetenueSources>
+    <identifiantFiscal t-out="o.company_id.l10n_ma_identifiant_fiscal or ''"/>
+    <annee t-out="o.annee"/>
+    <periode t-out="o.periode"/>
+    <regime t-out="o.regime"/>
+    <fournisseurs>
+        <t t-foreach="o.line_ids" t-as="line">
+        <fournisseur>
+            <ifuFournisseur t-out="line.ifu_fournisseur or ''"/>
+            <numFacture t-out="line.num_facture or ''"/>
+            <datePaiement t-out="str(line.date_paiement) if line.date_paiement else ''"/>
+            <dateOperation t-out="str(line.date_operation) if line.date_operation else ''"/>
+            <refNatOpt t-out="line.ref_nat_opt or '2'"/>
+            <montantHT t-out="'%.2f' % (line.montant_ht or 0.0)"/>
+            <tauxTva t-out="line.taux_tva or '20'"/>
+            <tauxRetenuSource t-out="line.taux_retenu_source or '75'"/>
+        </fournisseur>
+        </t>
+    </fournisseurs>
+</VersementRetenueSources>
+        </t>
+    </template>
+</odoo>
