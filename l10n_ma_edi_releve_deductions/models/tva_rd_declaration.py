@@ -189,7 +189,9 @@ class TvaRdDeclaration(models.Model):
                 payment_date = rec._get_payment_date(move)
                 mode_paiement = rec._get_mode_paiement(move)
                 num_facture = (move.ref or move.name or '')[:50]
-                description = move.narration or move.invoice_payment_ref or move.ref or move.name or ''
+                description = (
+                    move.narration or move.invoice_payment_ref or move.ref or move.name or ''
+                )[:255]
 
                 for rate in sorted(grouped_amounts):
                     lines_vals.append((0, 0, {

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Template de référence QWeb - la génération principale utilise lxml (_generate_xml_content) -->
     <template id="report_tva_rd_xml" name="Relevé Déductions TVA XML">
         <t t-foreach="docs" t-as="o">
 <DeclarationReleveDeduction>
