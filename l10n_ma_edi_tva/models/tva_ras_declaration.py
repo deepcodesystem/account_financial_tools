@@ -164,7 +164,7 @@ class TvaRasDeclarationLine(models.Model):
 
     declaration_id = fields.Many2one('tva.ras.declaration', string='Déclaration', required=True, ondelete='cascade')
     move_id = fields.Many2one('account.move', string='Facture')
-    ifu_fournisseur = fields.Char(string='IF Fournisseur (IFU)', size=8)
+    ifu_fournisseur = fields.Char(string='IFU Fournisseur', size=8)
     num_facture = fields.Char(string='Numéro Facture', size=50)
     date_paiement = fields.Date(string='Date Paiement')
     date_operation = fields.Date(string='Date Opération')
