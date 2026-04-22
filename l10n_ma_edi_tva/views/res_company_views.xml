@@ -11,6 +11,7 @@
                         <field name="l10n_ma_identifiant_fiscal"/>
                         <field name="l10n_ma_ice"/>
                         <field name="l10n_ma_regime_tva"/>
+                        <field name="l10n_ma_periodicite_tva"/>
                     </group>
                 </page>
             </xpath>

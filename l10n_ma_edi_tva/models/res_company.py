@@ -11,3 +11,8 @@ class ResCompany(models.Model):
         string='Régime TVA',
         default='1',
     )
+    l10n_ma_periodicite_tva = fields.Selection(
+        [('monthly', 'Mensuelle'), ('quarterly', 'Trimestrielle')],
+        string='Périodicité TVA RAS',
+        default='monthly',
+    )
