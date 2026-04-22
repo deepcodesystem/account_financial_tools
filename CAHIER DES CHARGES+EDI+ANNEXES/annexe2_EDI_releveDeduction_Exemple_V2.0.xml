@@ -1,0 +1,72 @@
+﻿<DeclarationReleveDeduction>
+	<identifiantFiscal>1003928</identifiantFiscal>
+	<annee>2017</annee>
+	<periode>10</periode>
+	<regime>1</regime>
+	<releveDeductions>
+		<rd>
+					<ord>1</ord>
+					<num>AD9875421</num>
+					<des>facture d'eau </des>
+					<mht>1000.10</mht>
+					<tva>100.01</tva>
+					<ttc>1100.11</ttc>
+					<refF>
+						<if>3300624</if>
+						<nom>ONEP</nom>
+						<ice>126587412555</ice>
+					</refF>
+					<tx>10.00</tx>
+					<prorata>70</prorata>
+					<mp>
+						<id>1</id>
+					</mp>
+					<dpai>2017-10-22</dpai>
+					<dfac>2017-10-12</dfac>
+		</rd>
+	<rd>
+					<ord>2</ord>
+					<num>AD9875421</num>
+					<des>facture d'electricite </des>
+					<mht>1000.10</mht>
+					<tva>100.01</tva>
+					<ttc>1100.11</ttc>
+					<refF>
+						<if>3300624</if>
+						<nom>REDAL</nom>
+						<ice>126587412555</ice>
+					</refF>
+					<tx>10.00</tx>
+					<prorata>80</prorata>
+					<mp>
+						<id>3</id>
+					</mp>
+					<dpai>2017-10-30</dpai>
+					<dfac>2017-10-05</dfac>
+		</rd>
+		
+		<rd>
+					<ord>1</ord>
+					<num>AD9875421</num>
+					<des>facture d'entretien </des>
+					<mht>1000.10</mht>
+					<tva>100.01</tva>
+					<ttc>1100.11</ttc>
+					<refF>
+						<if>3300624</if>
+						<nom>soceiete de travaux</nom>
+						<ice>126587412555</ice>
+					</refF>
+					<tx>10.00</tx>
+					
+					<mp>
+						<id>5</id>
+					</mp>
+					<dpai>2017-10-25</dpai>
+					<dfac>2017-10-15</dfac>
+		</rd>
+				
+				
+				
+				</releveDeductions>
+</DeclarationReleveDeduction>
