@@ -75,12 +75,16 @@ class TvaRasDeclaration(models.Model):
         taxes = move.invoice_line_ids.mapped('tax_ids').filtered(lambda t: t.amount_type == 'percent')
         if not taxes:
             return ''
-        amount = taxes[0].amount
-        if amount is None:
-            return ''
-        if amount == int(amount):
-            return str(int(amount))
-        return str(amount)
+        rates = []
+        for tax in taxes:
+            amount = tax.amount
+            if amount is None:
+                continue
+            if abs(amount - round(amount)) < 1e-9:
+                rates.append(str(int(round(amount))))
+            else:
+                rates.append(str(amount))
+        return ','.join(sorted(set(rates)))
 
     def action_validate(self):
         for rec in self:
