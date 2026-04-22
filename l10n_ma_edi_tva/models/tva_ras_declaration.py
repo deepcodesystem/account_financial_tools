@@ -39,13 +39,16 @@ class TvaRasDeclaration(models.Model):
         for rec in self:
             if not rec.periode or not rec.annee:
                 raise UserError(_('Veuillez renseigner la période et l\'année.'))
-            month = int(rec.periode)
-            year = int(rec.annee)
-            start_date = date(year, month, 1)
-            if month == 12:
-                end_date = date(year + 1, 1, 1)
-            else:
-                end_date = date(year, month + 1, 1)
+            try:
+                month = int(rec.periode)
+                year = int(rec.annee)
+                start_date = date(year, month, 1)
+                if month == 12:
+                    end_date = date(year + 1, 1, 1)
+                else:
+                    end_date = date(year, month + 1, 1)
+            except (TypeError, ValueError):
+                raise UserError(_('Année ou période invalide.')) from None
 
             moves = self.env['account.move'].search([
                 ('company_id', '=', rec.company_id.id),
@@ -78,7 +81,7 @@ class TvaRasDeclaration(models.Model):
         rates = []
         for tax in taxes:
             amount = tax.amount
-            if amount is None:
+            if amount is None or not isinstance(amount, (int, float)):
                 continue
             if abs(amount - round(amount)) < 1e-9:
                 rates.append(str(int(round(amount))))
