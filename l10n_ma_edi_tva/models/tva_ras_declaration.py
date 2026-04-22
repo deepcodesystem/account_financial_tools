@@ -16,7 +16,7 @@ class TvaRasDeclaration(models.Model):
     _name = 'tva.ras.declaration'
     _description = 'Déclaration TVA RAS'
 
-    name = fields.Char(string='Référence', required=True, default=lambda self: _('Nouvelle déclaration'))
+    name = fields.Char(string='Référence', required=True, default='New')
     company_id = fields.Many2one('res.company', string='Société', required=True, default=lambda self: self.env.company)
     annee = fields.Char(string='Année', required=True, size=4, default=lambda self: str(fields.Date.today().year))
     periode = fields.Selection(PERIODE_SELECTION, string='Période (Mois)', required=True)
@@ -76,7 +76,9 @@ class TvaRasDeclaration(models.Model):
         if not taxes:
             return ''
         amount = taxes[0].amount
-        if float(amount).is_integer():
+        if amount is None:
+            return ''
+        if amount.is_integer():
             return str(int(amount))
         return str(amount)
 
