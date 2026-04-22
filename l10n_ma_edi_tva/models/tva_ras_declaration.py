@@ -76,13 +76,16 @@ class TvaRasDeclaration(models.Model):
     @api.constrains('periodicite', 'periode')
     def _check_periode_periodicite(self):
         for rec in self:
-            if rec.periodicite == 'quarterly' and rec.periode:
-                try:
-                    period = int(rec.periode)
-                except (TypeError, ValueError):
-                    raise ValidationError(_("Période trimestrielle invalide.")) from None
-                if period < 1 or period > 4:
-                    raise ValidationError(_("En mode trimestriel, la période doit être comprise entre 1 et 4."))
+            if not rec.periode:
+                continue
+            try:
+                period = int(rec.periode)
+            except (TypeError, ValueError):
+                raise ValidationError(_("Période invalide.")) from None
+            if rec.periodicite == 'quarterly' and (period < 1 or period > 4):
+                raise ValidationError(_("En mode trimestriel, la période doit être comprise entre 1 et 4."))
+            if rec.periodicite == 'monthly' and (period < 1 or period > 12):
+                raise ValidationError(_("En mode mensuel, la période doit être comprise entre 1 et 12."))
 
     def _get_period_dates(self):
         self.ensure_one()

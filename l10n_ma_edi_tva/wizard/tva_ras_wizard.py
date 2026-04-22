@@ -39,7 +39,11 @@ class TvaRasWizard(models.TransientModel):
             if not self.periode_mensuelle:
                 raise UserError(_("Veuillez renseigner le mois pour une déclaration mensuelle."))
             periode = self.periode_mensuelle
-            declaration_name = _('TVA RAS %(periode)s/%(annee)s', periode=f"{int(periode):02d}", annee=self.annee)
+            try:
+                periode_label = f"{int(periode):02d}"
+            except (TypeError, ValueError):
+                raise UserError(_("Mois invalide pour une déclaration mensuelle.")) from None
+            declaration_name = _('TVA RAS %(periode)s/%(annee)s', periode=periode_label, annee=self.annee)
         else:
             if not self.periode_trimestrielle:
                 raise UserError(_("Veuillez renseigner le trimestre pour une déclaration trimestrielle."))
