@@ -1,0 +1,30 @@
+<DeclarationDebiteurs>
+<identifiantFiscal>1844</identifiantFiscal>
+<annee>2023</annee>
+<clients>
+<client>
+<nomPrenomAdh>societe test1</nomPrenomAdh>
+<montantCreance>15000.67</montantCreance>
+<tauxTva>7</tauxTva>
+<tvaCorrespondante>1050.05</tvaCorrespondante>
+</client>
+<client>
+<nomPrenomAdh>Societe test2</nomPrenomAdh>
+<montantCreance>20000</montantCreance>
+<tauxTva>10</tauxTva>
+<tvaCorrespondante>2000</tvaCorrespondante>
+</client>
+<client>
+<nomPrenomAdh>Societe test3</nomPrenomAdh>
+<montantCreance>1800000</montantCreance>
+<tauxTva>14</tauxTva>
+<tvaCorrespondante>252000</tvaCorrespondante>
+</client>
+<client>
+<nomPrenomAdh>Societe test4</nomPrenomAdh>
+<montantCreance>900000</montantCreance>
+<tauxTva>20</tauxTva>
+<tvaCorrespondante>180000</tvaCorrespondante>
+</client>
+</clients>
+</DeclarationDebiteurs>
