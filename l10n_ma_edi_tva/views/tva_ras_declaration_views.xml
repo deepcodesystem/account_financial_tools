@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tva_ras_declaration_tree" model="ir.ui.view">
+        <field name="name">tva.ras.declaration.tree</field>
+        <field name="model">tva.ras.declaration</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="company_id"/>
+                <field name="annee"/>
+                <field name="periode"/>
+                <field name="regime"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_tva_ras_declaration_form" model="ir.ui.view">
+        <field name="name">tva.ras.declaration.form</field>
+        <field name="model">tva.ras.declaration</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_generate_lines" type="object" string="Générer les lignes" class="btn-primary" states="draft,validated"/>
+                    <button name="action_validate" type="object" string="Valider" states="draft"/>
+                    <button name="action_export_xml" type="object" string="Exporter XML" states="validated,exported"/>
+                    <button name="action_export_zip" type="object" string="Exporter ZIP" states="validated,exported"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,validated,exported"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="company_id"/>
+                        </group>
+                        <group>
+                            <field name="annee"/>
+                            <field name="periode"/>
+                            <field name="regime"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lignes">
+                            <field name="line_ids" nolabel="1">
+                                <tree editable="bottom">
+                                    <field name="move_id"/>
+                                    <field name="ifu_fournisseur"/>
+                                    <field name="num_facture"/>
+                                    <field name="date_paiement"/>
+                                    <field name="date_operation"/>
+                                    <field name="ref_nat_opt"/>
+                                    <field name="montant_ht"/>
+                                    <field name="taux_tva"/>
+                                    <field name="taux_retenu_source"/>
+                                </tree>
+                                <form>
+                                    <group>
+                                        <field name="move_id"/>
+                                        <field name="ifu_fournisseur"/>
+                                        <field name="num_facture"/>
+                                        <field name="date_paiement"/>
+                                        <field name="date_operation"/>
+                                        <field name="ref_nat_opt"/>
+                                        <field name="montant_ht"/>
+                                        <field name="taux_tva"/>
+                                        <field name="taux_retenu_source"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tva_ras_declaration" model="ir.actions.act_window">
+        <field name="name">Déclarations TVA RAS Maroc</field>
+        <field name="res_model">tva.ras.declaration</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="view_tva_ras_wizard_form" model="ir.ui.view">
+        <field name="name">tva.ras.wizard.form</field>
+        <field name="model">tva.ras.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Nouvelle Déclaration TVA RAS">
+                <group>
+                    <field name="company_id"/>
+                    <field name="annee"/>
+                    <field name="periode"/>
+                </group>
+                <footer>
+                    <button name="action_create_declaration" type="object" string="Créer" class="btn-primary"/>
+                    <button string="Annuler" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tva_ras_wizard" model="ir.actions.act_window">
+        <field name="name">Nouvelle Déclaration TVA RAS</field>
+        <field name="res_model">tva.ras.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

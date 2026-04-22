@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tva_ras_declaration_manager,tva.ras.declaration manager,model_tva_ras_declaration,account.group_account_manager,1,1,1,1
+access_tva_ras_declaration_line_manager,tva.ras.declaration.line manager,model_tva_ras_declaration_line,account.group_account_manager,1,1,1,1

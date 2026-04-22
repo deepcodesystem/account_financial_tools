@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_tva_ras_xml" name="TVA RAS XML">
+        <t t-foreach="docs" t-as="o">
+<VersementRetenueSources>
+    <identifiantFiscal t-esc="o.company_id.l10n_ma_identifiant_fiscal"/>
+    <annee t-esc="o.annee"/>
+    <periode t-esc="o.periode"/>
+    <regime t-esc="o.regime"/>
+    <fournisseurs>
+        <t t-foreach="o.line_ids" t-as="line">
+        <fournisseur>
+            <ifuFournisseur t-esc="line.ifu_fournisseur"/>
+            <numFacture t-esc="line.num_facture"/>
+            <datePaiement t-esc="line.date_paiement"/>
+            <dateOperation t-esc="line.date_operation"/>
+            <refNatOpt t-esc="line.ref_nat_opt"/>
+            <montantHT t-esc="line.montant_ht"/>
+            <tauxTva t-esc="line.taux_tva"/>
+            <tauxRetenuSource t-esc="line.taux_retenu_source"/>
+        </fournisseur>
+        </t>
+    </fournisseurs>
+</VersementRetenueSources>
+        </t>
+    </template>
+</odoo>

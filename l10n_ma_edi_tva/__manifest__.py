@@ -1,0 +1,20 @@
+{
+    'name': 'Maroc - EDI TVA Retenue à la Source (SIMPL-TVA)',
+    'version': '18.0.1.0.0',
+    'category': 'Accounting/Localizations',
+    'summary': 'Génération fichier XML EDI SIMPL-TVA RAS DGI Maroc',
+    'author': 'deepcodesystem',
+    'depends': ['account', 'l10n_ma'],
+    'data': [
+        'security/ir.model.access.csv',
+        'data/tva_ras_xsd.xml',
+        'views/res_company_views.xml',
+        'views/res_partner_views.xml',
+        'views/tva_ras_declaration_views.xml',
+        'views/menu.xml',
+        'report/tva_ras_xml_template.xml',
+    ],
+    'installable': True,
+    'application': False,
+    'license': 'LGPL-3',
+}

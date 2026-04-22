@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:simpleType name="ST_date">
+		<xs:restriction base="xs:date" />
+	</xs:simpleType>
+
+	<xs:simpleType name="StringRequired">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"></xs:minLength>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:element name="VersementRetenueSources">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="identifiantFiscal">
+					<xs:simpleType>
+						<xs:restriction base="xs:string" >
+							<xs:maxLength value="8" />
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element name="annee">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="4"></xs:minLength>
+							<xs:maxLength value="4"></xs:maxLength>
+							<xs:pattern value=".*"></xs:pattern>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="periode">
+					<xs:simpleType>
+						<xs:restriction base="xs:short">
+							<xs:enumeration value="1"></xs:enumeration>
+							<xs:enumeration value="2"></xs:enumeration>
+							<xs:enumeration value="3"></xs:enumeration>
+							<xs:enumeration value="4"></xs:enumeration>
+							<xs:enumeration value="5"></xs:enumeration>
+							<xs:enumeration value="6"></xs:enumeration>
+							<xs:enumeration value="7"></xs:enumeration>
+							<xs:enumeration value="8"></xs:enumeration>
+							<xs:enumeration value="9"></xs:enumeration>
+							<xs:enumeration value="10"></xs:enumeration>
+							<xs:enumeration value="11"></xs:enumeration>
+							<xs:enumeration value="12"></xs:enumeration>
+							<xs:pattern value=".*"></xs:pattern>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="regime">
+					<xs:simpleType>
+						<xs:restriction base="xs:short">
+							<xs:pattern value=".*"></xs:pattern>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element ref="fournisseurs" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="fournisseurs">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="fournisseur" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="ifuFournisseur">
+								<xs:simpleType>
+									<xs:restriction base="xs:string" >
+										<xs:maxLength value="8" />
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="numFacture">
+								<xs:simpleType>
+									<xs:restriction base="xs:string" >
+										<xs:maxLength value="50" />
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="datePaiement" type="xs:date"/>
+							<xs:element name="dateOperation" type="xs:date"/>
+							<xs:element name="refNatOpt" type="refNatOptType"/>
+							<xs:element name="montantHT" type="xs:double" />
+							<xs:element name="tauxTva" type="xs:string"/>
+							<xs:element name="tauxRetenuSource" type="xs:string"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:simpleType name="refNatOptType">
+		<xs:restriction base="xs:long">
+			<xs:enumeration value="1" />
+			<xs:enumeration value="2" />
+			<xs:enumeration value="3" />
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

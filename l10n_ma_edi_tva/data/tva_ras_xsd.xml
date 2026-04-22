@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="attachment_tva_ras_xsd" model="ir.attachment">
+        <field name="name">Annexe3_TVARetenueSource_V2.0.xsd</field>
+        <field name="type">url</field>
+        <field name="url">/l10n_ma_edi_tva/static/xsd/Annexe3_TVARetenueSource_V2.0.xsd</field>
+        <field name="mimetype">application/xml</field>
+    </record>
+</odoo>
