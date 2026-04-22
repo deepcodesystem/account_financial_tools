@@ -10,6 +10,13 @@ from odoo.exceptions import UserError, ValidationError
 
 
 PERIODE_SELECTION = [(str(i), str(i)) for i in range(1, 13)]
+TRIMESTRE_SELECTION = [
+    ('1', 'T1 (Jan-Mar)'),
+    ('2', 'T2 (Avr-Jun)'),
+    ('3', 'T3 (Jul-Sep)'),
+    ('4', 'T4 (Oct-Déc)'),
+]
+QUARTER_TO_MONTH_MAPPING = {'1': '3', '2': '6', '3': '9', '4': '12'}
 REGIME_SELECTION = [('1', 'Débit'), ('2', 'Encaissement')]
 REF_NAT_OPT_SELECTION = [
     ('1', 'Services'),
@@ -33,7 +40,17 @@ class TvaRasDeclaration(models.Model):
         string='Année', required=True, size=4,
         default=lambda self: str(fields.Date.today().year),
     )
-    periode = fields.Selection(PERIODE_SELECTION, string='Période (Mois)', required=True)
+    periodicite = fields.Selection(
+        [('monthly', 'Mensuelle'), ('quarterly', 'Trimestrielle')],
+        string='Périodicité',
+        required=True,
+        default='monthly',
+    )
+    periode = fields.Selection(
+        selection='_get_periode_selection',
+        string='Période',
+        required=True,
+    )
     regime = fields.Selection(REGIME_SELECTION, string='Régime TVA', required=True, default='1')
     state = fields.Selection(
         [('draft', 'Brouillon'), ('validated', 'Validé'), ('exported', 'Exporté')],
@@ -53,15 +70,43 @@ class TvaRasDeclaration(models.Model):
             if rec.annee and (len(rec.annee) != 4 or not rec.annee.isdigit()):
                 raise ValidationError(_("L'année doit contenir exactement 4 chiffres."))
 
+    @api.model
+    def _get_periode_selection(self):
+        return PERIODE_SELECTION + TRIMESTRE_SELECTION
+
+    @api.constrains('periodicite', 'periode')
+    def _check_periode_periodicite(self):
+        for rec in self:
+            if not rec.periode:
+                continue
+            try:
+                period = int(rec.periode)
+            except (TypeError, ValueError):
+                raise ValidationError(_("Période invalide.")) from None
+            if rec.periodicite == 'quarterly' and (period < 1 or period > 4):
+                raise ValidationError(_("En mode trimestriel, la période doit être comprise entre 1 et 4."))
+            if rec.periodicite == 'monthly' and (period < 1 or period > 12):
+                raise ValidationError(_("En mode mensuel, la période doit être comprise entre 1 et 12."))
+
     def _get_period_dates(self):
         self.ensure_one()
         try:
-            month = int(self.periode)
             year = int(self.annee)
-            start_date = date(year, month, 1)
-            end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+            period = int(self.periode)
         except (TypeError, ValueError):
             raise UserError(_("Année ou période invalide.")) from None
+
+        if self.periodicite == 'quarterly':
+            start_month = (period - 1) * 3 + 1
+            end_month = start_month + 3
+            start_date = date(year, start_month, 1)
+            if end_month > 12:
+                end_date = date(year + 1, 1, 1)
+            else:
+                end_date = date(year, end_month, 1)
+        else:
+            start_date = date(year, period, 1)
+            end_date = date(year + 1, 1, 1) if period == 12 else date(year, period + 1, 1)
         return start_date, end_date
 
     def _get_payment_date(self, move):
@@ -170,7 +215,11 @@ class TvaRasDeclaration(models.Model):
             self.company_id.l10n_ma_identifiant_fiscal or ''
         )[:8]
         etree.SubElement(root, 'annee').text = self.annee
-        etree.SubElement(root, 'periode').text = self.periode
+        if self.periodicite == 'quarterly':
+            periode_xml = QUARTER_TO_MONTH_MAPPING.get(self.periode, self.periode)
+        else:
+            periode_xml = self.periode
+        etree.SubElement(root, 'periode').text = periode_xml
         etree.SubElement(root, 'regime').text = self.regime
 
         fournisseurs = etree.SubElement(root, 'fournisseurs')

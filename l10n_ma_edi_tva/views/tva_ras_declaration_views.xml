@@ -8,6 +8,7 @@
                 <field name="name"/>
                 <field name="company_id" groups="base.group_multi_company"/>
                 <field name="annee"/>
+                <field name="periodicite"/>
                 <field name="periode"/>
                 <field name="regime"/>
                 <field name="line_count" string="Lignes"/>
@@ -51,8 +52,9 @@
                         <group>
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="annee"/>
-                            <field name="periode"/>
                             <field name="regime"/>
+                            <field name="periodicite"/>
+                            <field name="periode"/>
                         </group>
                         <group>
                             <field name="line_count" string="Nombre de lignes"/>
@@ -117,7 +119,9 @@
                 <group>
                     <field name="company_id" groups="base.group_multi_company"/>
                     <field name="annee"/>
-                    <field name="periode"/>
+                    <field name="periodicite"/>
+                    <field name="periode_mensuelle" invisible="periodicite != 'monthly'"/>
+                    <field name="periode_trimestrielle" invisible="periodicite != 'quarterly'"/>
                 </group>
                 <footer>
                     <button name="action_create_declaration" type="object"
