@@ -17,7 +17,7 @@ class TvaRasWizard(models.TransientModel):
     def action_create_declaration(self):
         self.ensure_one()
         declaration = self.env['tva.ras.declaration'].create({
-            'name': _('Déclaration TVA RAS %s/%s') % (self.periode, self.annee),
+            'name': _('Déclaration TVA RAS %(periode)s/%(annee)s', periode=self.periode, annee=self.annee),
             'company_id': self.company_id.id,
             'annee': self.annee,
             'periode': self.periode,

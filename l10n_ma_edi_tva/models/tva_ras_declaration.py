@@ -102,10 +102,19 @@ class TvaRasDeclaration(models.Model):
             xml_bytes = b'<?xml version="1.0" encoding="UTF-8"?>\n' + xml_bytes
         return xml_bytes
 
+    def _get_export_filename_base(self):
+        self.ensure_one()
+        try:
+            year = int(self.annee)
+            month = int(self.periode)
+        except (TypeError, ValueError):
+            raise UserError(_('Année ou période invalide pour l’export.')) from None
+        return f"TVA_RAS_{self.company_id.id}_{year}_{month}"
+
     def action_export_xml(self):
         self.ensure_one()
         xml_content = self._generate_xml_content()
-        filename = f"TVA_RAS_{self.company_id.id}_{self.annee}_{self.periode}.xml"
+        filename = f"{self._get_export_filename_base()}.xml"
         attachment = self.env['ir.attachment'].create({
             'name': filename,
             'datas': base64.b64encode(xml_content),
@@ -123,8 +132,9 @@ class TvaRasDeclaration(models.Model):
     def action_export_zip(self):
         self.ensure_one()
         xml_content = self._generate_xml_content()
-        xml_filename = f"TVA_RAS_{self.company_id.id}_{self.annee}_{self.periode}.xml"
-        zip_filename = f"TVA_RAS_{self.company_id.id}_{self.annee}_{self.periode}.zip"
+        base_name = self._get_export_filename_base()
+        xml_filename = f"{base_name}.xml"
+        zip_filename = f"{base_name}.zip"
 
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
