@@ -50,7 +50,10 @@ class TvaRdWizard(models.TransientModel):
             if not self.periode_mensuelle:
                 raise UserError(_('Veuillez renseigner le mois.'))
             periode = self.periode_mensuelle
-            periode_label = f"{int(periode):02d}"
+            try:
+                periode_label = f"{int(periode):02d}"
+            except (TypeError, ValueError):
+                raise UserError(_('Mois invalide pour une déclaration mensuelle.')) from None
             declaration_name = _('RD TVA %(periode)s/%(annee)s', periode=periode_label, annee=self.annee)
         else:
             if not self.periode_trimestrielle:
