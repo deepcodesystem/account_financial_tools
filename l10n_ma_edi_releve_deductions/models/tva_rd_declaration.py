@@ -7,14 +7,15 @@ from lxml import etree
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools.mail import html2plaintext
 
 
 PERIODE_SELECTION = [(str(i), str(i)) for i in range(1, 13)]
 TRIMESTRE_SELECTION = [
-    ('1', 'T1 (Jan-Mar)'),
-    ('2', 'T2 (Avr-Jun)'),
-    ('3', 'T3 (Jul-Sep)'),
-    ('4', 'T4 (Oct-Déc)'),
+    ('T1', 'T1 (Jan-Mar)'),
+    ('T2', 'T2 (Avr-Jun)'),
+    ('T3', 'T3 (Jul-Sep)'),
+    ('T4', 'T4 (Oct-Déc)'),
 ]
 REGIME_SELECTION = [('1', 'Débit'), ('2', 'Encaissement')]
 MODE_PAIEMENT_SELECTION = [
@@ -25,7 +26,7 @@ MODE_PAIEMENT_SELECTION = [
     ('5', 'Autre'),
 ]
 PERIODICITE_SELECTION = [('monthly', 'Mensuelle'), ('quarterly', 'Trimestrielle')]
-QUARTER_TO_MONTH_MAPPING = {'1': '3', '2': '6', '3': '9', '4': '12'}
+QUARTER_TO_MONTH_MAPPING = {'T1': '3', 'T2': '6', 'T3': '9', 'T4': '12'}
 
 
 class TvaRdDeclaration(models.Model):
@@ -89,29 +90,38 @@ class TvaRdDeclaration(models.Model):
         for rec in self:
             if not rec.periode:
                 continue
-            try:
-                period = int(rec.periode)
-            except (TypeError, ValueError):
-                raise ValidationError(_('Période invalide.')) from None
-            if rec.periodicite == 'quarterly' and (period < 1 or period > 4):
-                raise ValidationError(_('En mode trimestriel, la période doit être comprise entre 1 et 4.'))
-            if rec.periodicite == 'monthly' and (period < 1 or period > 12):
-                raise ValidationError(_('En mode mensuel, la période doit être comprise entre 1 et 12.'))
+            if rec.periodicite == 'quarterly':
+                if rec.periode not in ('T1', 'T2', 'T3', 'T4'):
+                    raise ValidationError(_('En mode trimestriel, la période doit être T1, T2, T3 ou T4.'))
+            else:
+                try:
+                    period = int(rec.periode)
+                except (TypeError, ValueError):
+                    raise ValidationError(_('Période invalide.')) from None
+                if period < 1 or period > 12:
+                    raise ValidationError(_('En mode mensuel, la période doit être comprise entre 1 et 12.'))
 
     def _get_period_dates(self):
         self.ensure_one()
         try:
             year = int(self.annee)
-            period = int(self.periode)
         except (TypeError, ValueError):
-            raise UserError(_('Année ou période invalide.')) from None
+            raise UserError(_('Année invalide.')) from None
 
         if self.periodicite == 'quarterly':
-            start_month = (period - 1) * 3 + 1
+            quarter_map = {'T1': 1, 'T2': 2, 'T3': 3, 'T4': 4}
+            quarter = quarter_map.get(self.periode)
+            if not quarter:
+                raise UserError(_('Trimestre invalide.'))
+            start_month = (quarter - 1) * 3 + 1
             end_month = start_month + 3
             start_date = date(year, start_month, 1)
             end_date = date(year + 1, 1, 1) if end_month > 12 else date(year, end_month, 1)
         else:
+            try:
+                period = int(self.periode)
+            except (TypeError, ValueError):
+                raise UserError(_('Période invalide.')) from None
             start_date = date(year, period, 1)
             end_date = date(year + 1, 1, 1) if period == 12 else date(year, period + 1, 1)
         return start_date, end_date
@@ -165,14 +175,18 @@ class TvaRdDeclaration(models.Model):
                 raise UserError(_('Veuillez renseigner l\'année et la période.'))
 
             start_date, end_date = rec._get_period_dates()
-            moves = self.env['account.move'].search([
+            domain = [
                 ('company_id', '=', rec.company_id.id),
                 ('move_type', '=', 'in_invoice'),
                 ('state', '=', 'posted'),
-                ('payment_state', 'in', ['paid', 'in_payment']),
                 ('invoice_date', '>=', start_date),
                 ('invoice_date', '<', end_date),
-            ], order='invoice_date asc, id asc')
+            ]
+            # Régime encaissement : uniquement les factures payées
+            if rec.regime == '2':
+                domain.append(('payment_state', 'in', ['paid', 'in_payment']))
+
+            moves = self.env['account.move'].search(domain, order='invoice_date asc, id asc')
 
             lines_vals = [(5, 0, 0)]
             seq = 1
@@ -189,8 +203,9 @@ class TvaRdDeclaration(models.Model):
                 payment_date = rec._get_payment_date(move)
                 mode_paiement = rec._get_mode_paiement(move)
                 num_facture = (move.ref or move.name or '')[:50]
+                narration_raw = move.narration or ''
                 description = (
-                    move.narration or move.invoice_payment_ref or move.ref or move.name or ''
+                    html2plaintext(narration_raw).strip() if narration_raw else (move.ref or move.name or '')
                 )[:255]
 
                 for rate in sorted(grouped_amounts):
@@ -356,10 +371,11 @@ class TvaRdDeclarationLine(models.Model):
     date_paiement = fields.Date(string='Date Paiement')
     date_facture = fields.Date(string='Date Facture')
 
-    @api.depends('montant_ht', 'taux_tva')
+    @api.depends('montant_ht', 'taux_tva', 'prorata')
     def _compute_montants(self):
         for line in self:
             taux_tva = line.taux_tva or 0.0
-            montant_tva = round((line.montant_ht or 0.0) * taux_tva / 100, 2)
+            prorata = line.prorata if line.prorata is not None else 100
+            montant_tva = round((line.montant_ht or 0.0) * taux_tva / 100 * prorata / 100, 2)
             line.montant_tva = montant_tva
             line.montant_ttc = round((line.montant_ht or 0.0) + montant_tva, 2)

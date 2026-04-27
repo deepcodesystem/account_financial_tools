@@ -32,7 +32,7 @@ class TvaRdWizard(models.TransientModel):
     periode_trimestrielle = fields.Selection(
         TRIMESTRE_SELECTION,
         string='Trimestre',
-        default='1',
+        default='T1',
     )
     company_id = fields.Many2one(
         'res.company',

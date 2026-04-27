@@ -52,8 +52,9 @@
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="annee"/>
                             <field name="periodicite"/>
-                            <field name="periode" string="Mois" invisible="periodicite != 'monthly'"/>
-                            <field name="periode" string="Trimestre" invisible="periodicite != 'quarterly'"/>
+                            <label for="periode" string="Mois" invisible="periodicite != 'monthly'"/>
+                            <label for="periode" string="Trimestre" invisible="periodicite != 'quarterly'"/>
+                            <field name="periode" nolabel="1"/>
                             <field name="regime"/>
                         </group>
                         <group>
