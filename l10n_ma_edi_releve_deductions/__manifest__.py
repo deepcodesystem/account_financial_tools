@@ -1,0 +1,20 @@
+{
+    'name': 'Maroc - EDI Relevé de Déductions TVA (SIMPL-TVA)',
+    'version': '18.0.1.0.0',
+    'category': 'Accounting/Localizations',
+    'summary': 'Génération fichier XML EDI SIMPL-TVA Relevé Déductions DGI Maroc',
+    'author': 'deepcodesystem',
+    'license': 'LGPL-3',
+    'depends': ['account'],
+    'external_dependencies': {'python': ['lxml']},
+    'data': [
+        'security/ir.model.access.csv',
+        'views/res_company_views.xml',
+        'views/res_partner_views.xml',
+        'views/tva_rd_declaration_views.xml',
+        'views/menu.xml',
+        'report/tva_rd_xml_template.xml',
+    ],
+    'installable': True,
+    'application': False,
+}

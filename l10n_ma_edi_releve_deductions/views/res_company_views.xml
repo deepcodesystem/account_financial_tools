@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_l10n_ma_edi_rd" model="ir.ui.view">
+        <field name="name">res.company.form.l10n.ma.edi.rd</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Maroc EDI RD">
+                    <group>
+                        <field name="l10n_ma_rd_identifiant_fiscal"/>
+                        <field name="l10n_ma_rd_ice"/>
+                        <field name="l10n_ma_rd_regime_tva"/>
+                        <field name="l10n_ma_rd_periodicite"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

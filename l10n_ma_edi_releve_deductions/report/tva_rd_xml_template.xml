@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template de référence QWeb - la génération principale utilise lxml (_generate_xml_content) -->
+    <template id="report_tva_rd_xml" name="Relevé Déductions TVA XML">
+        <t t-foreach="docs" t-as="o">
+<DeclarationReleveDeduction>
+    <identifiantFiscal t-out="o.company_id.l10n_ma_rd_identifiant_fiscal or ''"/>
+    <annee t-out="o.annee"/>
+    <periode t-out="o._get_periode_xml()"/>
+    <regime t-out="o.regime"/>
+    <releveDeductions>
+        <t t-foreach="o.line_ids" t-as="line">
+        <rd>
+            <ord t-out="line.ord or 0"/>
+            <num t-out="line.num_facture or ''"/>
+            <des t-out="line.description or ''"/>
+            <mht t-out="'%.2f' % (line.montant_ht or 0.0)"/>
+            <tva t-out="'%.2f' % (line.montant_tva or 0.0)"/>
+            <ttc t-out="'%.2f' % (line.montant_ttc or 0.0)"/>
+            <refF>
+                <if t-out="line.if_fournisseur or ''"/>
+                <nom t-out="line.nom_fournisseur or ''"/>
+                <ice t-out="line.ice_fournisseur or ''"/>
+            </refF>
+            <tx t-out="'%.2f' % (line.taux_tva or 0.0)"/>
+            <prorata t-out="line.prorata if line.prorata is not None else 100"/>
+            <mp><id t-out="line.mode_paiement or '5'"/></mp>
+            <dpai t-out="str(line.date_paiement) if line.date_paiement else ''"/>
+            <dfac t-out="str(line.date_facture) if line.date_facture else ''"/>
+        </rd>
+        </t>
+    </releveDeductions>
+</DeclarationReleveDeduction>
+        </t>
+    </template>
+</odoo>

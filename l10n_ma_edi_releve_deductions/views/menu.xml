@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_l10n_ma_rd_root" name="Déclarations fiscales" parent="account.menu_finance" sequence="121"/>
+    <menuitem
+        id="menu_l10n_ma_rd_declarations"
+        name="Relevés de Déductions TVA (RD)"
+        parent="menu_l10n_ma_rd_root"
+        action="action_tva_rd_declaration"
+        sequence="10"
+    />
+    <menuitem
+        id="menu_l10n_ma_rd_wizard"
+        name="Nouvelle Déclaration RD TVA"
+        parent="menu_l10n_ma_rd_root"
+        action="action_tva_rd_wizard"
+        sequence="20"
+    />
+</odoo>

@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tva_rd_declaration_manager,tva.rd.declaration manager,model_tva_rd_declaration,account.group_account_manager,1,1,1,1
+access_tva_rd_declaration_user,tva.rd.declaration user,model_tva_rd_declaration,account.group_account_user,1,0,0,0
+access_tva_rd_declaration_line_manager,tva.rd.declaration.line manager,model_tva_rd_declaration_line,account.group_account_manager,1,1,1,1
+access_tva_rd_declaration_line_user,tva.rd.declaration.line user,model_tva_rd_declaration_line,account.group_account_user,1,0,0,0
+access_tva_rd_wizard_manager,tva.rd.wizard manager,model_tva_rd_wizard,account.group_account_manager,1,1,1,1
