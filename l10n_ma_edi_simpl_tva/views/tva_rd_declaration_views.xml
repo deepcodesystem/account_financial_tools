@@ -10,6 +10,8 @@
                 <field name="annee"/>
                 <field name="periodicite"/>
                 <field name="periode"/>
+                <field name="date_from" optional="hide"/>
+                <field name="date_to" optional="hide"/>
                 <field name="regime"/>
                 <field name="line_count" string="Lignes"/>
                 <field name="state" widget="badge"
@@ -32,6 +34,10 @@
                     <button name="action_validate" type="object"
                         string="Valider"
                         invisible="state != 'draft'"/>
+                    <button name="action_refresh_suppliers" type="object"
+                        string="Actualiser les fournisseurs"
+                        help="Reprend nom, IF et ICE depuis les fiches fournisseurs"
+                        invisible="state != 'draft'"/>
                     <button name="action_export_xml" type="object"
                         string="Exporter XML"
                         invisible="state not in ('validated', 'exported')"/>
@@ -43,19 +49,30 @@
                         invisible="state == 'draft'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,validated,exported"/>
                 </header>
+                <div class="alert alert-warning mb-0" role="alert" invisible="not warning_message">
+                    <strong>Plafonds espèces dépassés (non bloquant) :</strong>
+                    <field name="warning_message" nolabel="1" class="d-block"/>
+                </div>
                 <sheet>
                     <div class="oe_title">
-                        <h1><field name="name" placeholder="Référence..."/></h1>
+                        <h1><field name="name" placeholder="Référence..." readonly="state != 'draft'"/></h1>
                     </div>
                     <group>
                         <group>
-                            <field name="company_id" groups="base.group_multi_company"/>
-                            <field name="annee"/>
-                            <field name="periodicite"/>
-                            <label for="periode" string="Mois" invisible="periodicite != 'monthly'"/>
-                            <label for="periode" string="Trimestre" invisible="periodicite != 'quarterly'"/>
-                            <field name="periode" nolabel="1"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="annee" readonly="state != 'draft'"/>
+                            <field name="periodicite" readonly="state != 'draft'"/>
+                            <field name="periodicite_declaree" readonly="state != 'draft'"
+                                invisible="periodicite != 'custom'"/>
+                            <field name="date_from" readonly="state != 'draft'"
+                                invisible="periodicite != 'custom'" required="periodicite == 'custom'"/>
+                            <field name="date_to" readonly="state != 'draft'"
+                                invisible="periodicite != 'custom'" required="periodicite == 'custom'"/>
+                            <label for="periode" string="Mois déclaré" invisible="periodicite_declaree != 'monthly'"/>
+                            <label for="periode" string="Trimestre déclaré" invisible="periodicite_declaree != 'quarterly'"/>
+                            <field name="periode" nolabel="1" readonly="state != 'draft'"/>
                             <field name="regime"/>
+                            <field name="regime_comptabilite" readonly="state != 'draft'"/>
                         </group>
                         <group>
                             <field name="line_count" string="Nombre de lignes"/>
@@ -63,15 +80,24 @@
                     </group>
                     <notebook>
                         <page string="Lignes">
-                            <field name="line_ids" nolabel="1" readonly="state == 'exported'">
-                                <list editable="bottom">
+                            <field name="line_ids" nolabel="1" readonly="state != 'draft'">
+                                <list editable="bottom" decoration-danger="cash_limit_exceeded" decoration-warning="missing_supplier_data and not cash_limit_exceeded">
+                                    <field name="cash_limit_exceeded" column_invisible="True"/>
+                                    <field name="missing_supplier_data" column_invisible="True"/>
                                     <field name="ord"/>
                                     <field name="num_facture"/>
                                     <field name="description"/>
-                                    <field name="nom_fournisseur"/>
+                                    <field name="partner_id" context="{'res_partner_search_mode': 'supplier'}"/>
+                                    <button name="action_open_partner" type="object"
+                                        icon="fa-address-card-o" title="Compléter la fiche fournisseur"
+                                        invisible="not partner_id"/>
+                                    <field name="nom_fournisseur" optional="hide"/>
                                     <field name="if_fournisseur"/>
+                                    <field name="ice_fournisseur"/>
                                     <field name="date_facture"/>
                                     <field name="date_paiement"/>
+                                    <field name="move_id" optional="hide"/>
+                                    <field name="payment_move_id" optional="hide"/>
                                     <field name="montant_ht"/>
                                     <field name="taux_tva"/>
                                     <field name="montant_tva"/>
@@ -97,13 +123,25 @@
         <field name="name">tva.rd.wizard.form</field>
         <field name="model">tva.rd.wizard</field>
         <field name="arch" type="xml">
-            <form string="Nouvelle Déclaration RD TVA">
+            <form string="Nouvelle déclaration EDI SIMPL-TVA">
                 <group>
+                    <field name="declaration_type" invisible="1"/>
                     <field name="company_id" groups="base.group_multi_company"/>
                     <field name="annee"/>
                     <field name="periodicite"/>
-                    <field name="periode_mensuelle" invisible="periodicite != 'monthly'"/>
-                    <field name="periode_trimestrielle" invisible="periodicite != 'quarterly'"/>
+                    <field name="periodicite_declaree"
+                        invisible="periodicite != 'custom' or declaration_type == 'ras'"
+                        required="periodicite == 'custom' and declaration_type != 'ras'"/>
+                    <field name="date_from" invisible="periodicite != 'custom'" required="periodicite == 'custom'"/>
+                    <field name="date_to" invisible="periodicite != 'custom'" required="periodicite == 'custom'"/>
+                    <field name="periode_mensuelle" string="Mois déclaré"
+                        invisible="not (declaration_type == 'ras' or periodicite == 'monthly' or (periodicite == 'custom' and periodicite_declaree == 'monthly'))"/>
+                    <field name="periode_trimestrielle" string="Trimestre déclaré"
+                        invisible="declaration_type == 'ras' or not (periodicite == 'quarterly' or (periodicite == 'custom' and periodicite_declaree == 'quarterly'))"/>
+                    <div colspan="2" class="text-muted" invisible="periodicite != 'custom'">
+                        Les paiements de l'intervalle sont déclarés dans la période choisie (mois ou trimestre DGI),
+                        à l'exclusion de ceux déjà repris dans une autre déclaration. Délai : un an après le paiement.
+                    </div>
                 </group>
                 <footer>
                     <button name="action_create_declaration" type="object"

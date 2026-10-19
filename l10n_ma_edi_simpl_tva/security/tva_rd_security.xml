@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tva_rd_declaration_company_rule" model="ir.rule">
+        <field name="name">RD TVA: multi-entreprise (déclaration)</field>
+        <field name="model_id" ref="model_tva_rd_declaration"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="tva_rd_declaration_line_company_rule" model="ir.rule">
+        <field name="name">RD TVA: multi-entreprise (lignes)</field>
+        <field name="model_id" ref="model_tva_rd_declaration_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="tva_ras_declaration_company_rule" model="ir.rule">
+        <field name="name">RAS TVA: multi-entreprise (déclaration)</field>
+        <field name="model_id" ref="model_tva_ras_declaration"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="tva_ras_declaration_line_company_rule" model="ir.rule">
+        <field name="name">RAS TVA: multi-entreprise (lignes)</field>
+        <field name="model_id" ref="model_tva_ras_declaration_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

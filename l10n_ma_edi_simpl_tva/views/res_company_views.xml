@@ -6,12 +6,17 @@
         <field name="inherit_id" ref="base.view_company_form"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
-                <page string="Maroc EDI RD">
+                <page string="Maroc EDI TVA">
+                    <div class="text-muted mb-2">
+                        Identifiant fiscal (IF) déclaré : N° TVA de la société (onglet Informations générales).
+                    </div>
                     <group>
-                        <field name="l10n_ma_rd_identifiant_fiscal"/>
-                        <field name="l10n_ma_rd_ice"/>
                         <field name="l10n_ma_rd_regime_tva"/>
                         <field name="l10n_ma_rd_periodicite"/>
+                        <field name="l10n_ma_rd_prorata"/>
+                        <field name="l10n_ma_rd_cash_daily_limit"/>
+                        <field name="l10n_ma_rd_cash_monthly_limit"/>
+                        <field name="l10n_ma_ras_default_nature"/>
                     </group>
                 </page>
             </xpath>
