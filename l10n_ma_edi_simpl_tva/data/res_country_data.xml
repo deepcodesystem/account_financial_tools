@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Au Maroc, le N° TVA de la fiche contact porte l'identifiant fiscal (IF).
+         base.ma est en noupdate : écriture explicite pour s'appliquer aussi aux mises à jour. -->
+    <function model="res.country" name="write">
+        <value eval="[ref('base.ma')]"/>
+        <value eval="{'vat_label': 'IF'}"/>
+    </function>
+</odoo>

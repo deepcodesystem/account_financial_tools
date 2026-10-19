@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tva_ras_declaration_list" model="ir.ui.view">
+        <field name="name">tva.ras.declaration.list</field>
+        <field name="model">tva.ras.declaration</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="annee"/>
+                <field name="periode"/>
+                <field name="periodicite"/>
+                <field name="date_from" optional="hide"/>
+                <field name="date_to" optional="hide"/>
+                <field name="line_count" string="Lignes"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="montant_retenu_total" sum="Total"/>
+                <field name="state" widget="badge"
+                    decoration-success="state == 'exported'"
+                    decoration-info="state == 'validated'"
+                    decoration-muted="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tva_ras_declaration_form" model="ir.ui.view">
+        <field name="name">tva.ras.declaration.form</field>
+        <field name="model">tva.ras.declaration</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_generate_lines" type="object"
+                        string="Générer les lignes" class="btn-primary"
+                        invisible="state != 'draft'"/>
+                    <button name="action_validate" type="object"
+                        string="Valider"
+                        invisible="state != 'draft'"/>
+                    <button name="action_refresh_suppliers" type="object"
+                        string="Actualiser les fournisseurs"
+                        help="Reprend l'IF depuis les fiches fournisseurs"
+                        invisible="state != 'draft'"/>
+                    <button name="action_export_xml" type="object"
+                        string="Exporter XML"
+                        invisible="state not in ('validated', 'exported')"/>
+                    <button name="action_export_zip" type="object"
+                        string="Exporter ZIP"
+                        invisible="state not in ('validated', 'exported')"/>
+                    <button name="action_reset_draft" type="object"
+                        string="Remettre en brouillon"
+                        invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,validated,exported"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Référence..." readonly="state != 'draft'"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="annee" readonly="state != 'draft'"/>
+                            <field name="periode" string="Mois déclaré" readonly="state != 'draft'"/>
+                            <field name="periodicite" readonly="state != 'draft'"/>
+                            <field name="periodicite_declaree" invisible="1"/>
+                            <field name="date_from" readonly="state != 'draft'"
+                                invisible="periodicite != 'custom'" required="periodicite == 'custom'"/>
+                            <field name="date_to" readonly="state != 'draft'"
+                                invisible="periodicite != 'custom'" required="periodicite == 'custom'"/>
+                        </group>
+                        <group>
+                            <field name="line_count" string="Nombre de lignes"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="montant_retenu_total"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lignes">
+                            <field name="line_ids" nolabel="1" readonly="state != 'draft'">
+                                <list editable="bottom" decoration-warning="missing_supplier_data">
+                                    <field name="missing_supplier_data" column_invisible="True"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="partner_id" context="{'res_partner_search_mode': 'supplier'}"/>
+                                    <button name="action_open_partner" type="object"
+                                        icon="fa-address-card-o" title="Compléter la fiche fournisseur"
+                                        invisible="not partner_id"/>
+                                    <field name="ifu_fournisseur"/>
+                                    <field name="num_facture"/>
+                                    <field name="move_id" optional="hide"/>
+                                    <field name="payment_move_id" optional="hide"/>
+                                    <field name="date_operation"/>
+                                    <field name="date_paiement"/>
+                                    <field name="ref_nat_opt"/>
+                                    <field name="montant_ht" sum="Total"/>
+                                    <field name="taux_tva"/>
+                                    <field name="montant_tva" sum="Total"/>
+                                    <field name="taux_retenue"/>
+                                    <field name="montant_retenu" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tva_ras_declaration" model="ir.actions.act_window">
+        <field name="name">TVA retenue à la source (RAS)</field>
+        <field name="res_model">tva.ras.declaration</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_tva_ras_wizard" model="ir.actions.act_window">
+        <field name="name">Nouvelle Déclaration RAS TVA</field>
+        <field name="res_model">tva.rd.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_declaration_type': 'ras', 'default_periodicite': 'monthly'}</field>
+    </record>
+</odoo>

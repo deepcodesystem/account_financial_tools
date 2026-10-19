@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_l10n_ma_edi_rd" model="ir.ui.view">
+        <field name="name">res.partner.form.l10n.ma.edi.rd</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="l10n_ma.view_partner_property_form"/>
+        <field name="arch" type="xml">
+            <!-- Champ ICE ajouté par l10n_ma juste après le N° TVA (IF) -->
+            <xpath expr="//field[@name='vat']/following-sibling::field[@name='company_registry'][1]" position="after">
+                <field name="l10n_ma_ras_applicable" invisible="country_code != 'MA' or parent_id"/>
+                <field name="l10n_ma_ras_taux"
+                    invisible="country_code != 'MA' or parent_id or not l10n_ma_ras_applicable"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_form_l10n_ma_rd_quick" model="ir.ui.view">
+        <field name="name">res.partner.form.l10n.ma.rd.quick</field>
+        <field name="model">res.partner</field>
+        <field name="mode">primary</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <form string="Fiche fournisseur">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" required="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification DGI">
+                            <field name="vat" string="IF (N° TVA)"/>
+                            <field name="company_registry" string="ICE"/>
+                            <field name="l10n_ma_ras_applicable"/>
+                            <field name="l10n_ma_ras_taux" invisible="not l10n_ma_ras_applicable"/>
+                        </group>
+                        <group string="Coordonnées">
+                            <field name="country_id"/>
+                            <field name="email" widget="email"/>
+                            <field name="phone" widget="phone"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        L'IF est repris du N° TVA (préfixe « MA » et espaces ignorés), l'ICE du champ ICE.
+                        Ni l'un ni l'autre n'est exigé pour un fournisseur établi hors du Maroc (pays renseigné).
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_l10n_ma_rd_save_and_refresh" type="object"
+                        string="Enregistrer et mettre à jour la déclaration" class="btn-primary"/>
+                    <button string="Annuler" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
